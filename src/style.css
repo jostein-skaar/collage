@@ -95,23 +95,25 @@ h2 {
   padding: 10px;
 }
 
-.canvas-parent {
+.collage-designer-canvas-parent {
   border: 1px solid black;
+  padding: 5px;
   /* background-color: aquamarine; */
 }
 
-.template-group {
+.template-canvas-parent {
+  border: 1px solid #fff;
 }
 
 .template-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
-.template-container div {
-  width: 50px;
-  height: 20px;
-  background-color: red;
-  text-align: center;
+.template-group h2 {
+  margin-bottom: 4px;
+}
+.template-group {
+  margin-bottom: 6px;
 }
