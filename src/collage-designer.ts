@@ -32,9 +32,17 @@ export function initCollageDesigner(
 ) {
   const canvas = new fabric.Canvas(canvasId);
 
-  const width = size;
-  const height = Math.floor((width / ratio.width) * ratio.height);
-  //   const borders = (size / 800) * bordersRef800;
+  const isPortrait = ratio.height > ratio.width;
+  const isLandscape = ratio.height < ratio.width;
+
+  let width = size;
+  let height = size;
+  if (isPortrait) {
+    width = Math.floor((height / ratio.height) * ratio.width);
+  } else if (isLandscape) {
+    height = Math.floor((width / ratio.width) * ratio.height);
+  }
+
   const gridX = (width + borders) / template.columns;
   const gridY = (height + borders) / template.rows;
 
@@ -63,7 +71,7 @@ function createRect(canvas: fabric.Canvas, gridX: number, gridY: number, borders
     fill: backgroundColorEditing,
     stroke: borderColor,
     strokeWidth: borders,
-    selectable: true,
+    selectable: false,
   });
   canvas.add(rect);
 
