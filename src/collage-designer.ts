@@ -2,113 +2,175 @@ import { fabric } from 'fabric';
 import { Ratio } from './ratios';
 import { Region, Template } from './templates';
 
-const haveICreatedATemplateDesigner = false;
+type Dimensions = {
+  size: number;
+  width: number;
+  height: number;
+  gridX: number;
+  gridY: number;
+  borders: number;
+};
 
-const borderColor = '#fff';
-const backgroundColor = '#fff';
-const backgroundColorEditing = '#ccc';
-const backgroundColorHighlight = '#333';
+export class CollageDesigner {
+  canvas: fabric.Canvas;
+  haveICreatedATemplateDesigner = false;
 
-// canvas.clear();
-// const rect2 = new fabric.Rect({ width: 50, height: 150, fill: '#77f', top: 200, left: 200 });
-// // rect2.lockRotation = true;
-// rect2.controls = {
-//   ...fabric.Text.prototype.controls,
-//   mtr: new fabric.Control({ visible: false }),
-//   mb: new fabric.Control({ visible: false }),
-//   mt: new fabric.Control({ visible: false }),
-//   ml: new fabric.Control({ visible: false }),
-//   mr: new fabric.Control({ visible: false }),
-// };
-// canvas.add(rect2);
+  borderColor = '#fff';
+  backgroundColor = '#fff';
+  backgroundColorEditing = '#ccc';
+  backgroundColorHighlight = '#333';
 
-export function initCollageDesigner(
-  canvasId: string,
-  size: number,
-  borders: number,
-  template: Template,
-  ratio: Ratio,
-  preview: boolean = false
-) {
-  const canvas = new fabric.Canvas(canvasId);
+  template: Template;
+  ratio: Ratio;
+  dimensions: Dimensions;
+  rects: any[] = [];
+  preview = false;
 
-  const isPortrait = ratio.height > ratio.width;
-  const isLandscape = ratio.height < ratio.width;
+  constructor(canvasId: string, size: number, borders: number, template: Template, ratio: Ratio, preview: boolean = false) {
+    this.canvas = new fabric.Canvas(canvasId);
 
-  let width = size;
-  let height = size;
-  if (isPortrait) {
-    width = Math.floor((height / ratio.height) * ratio.width);
-  } else if (isLandscape) {
-    height = Math.floor((width / ratio.width) * ratio.height);
+    if (preview) {
+      this.canvas.hoverCursor = 'pointer';
+      this.preview = true;
+    }
+
+    this.template = template;
+    this.ratio = ratio;
+    this.dimensions = this.calculateDimensions(size, borders, template, ratio);
+
+    this.setCanvasSize();
+
+    if (this.haveICreatedATemplateDesigner) {
+      this.drawGrid();
+    }
+
+    this.drawRects();
   }
 
-  const gridX = (width + borders) / template.columns;
-  const gridY = (height + borders) / template.rows;
+  // canvas.clear();
+  // const rect2 = new fabric.Rect({ width: 50, height: 150, fill: '#77f', top: 200, left: 200 });
+  // // rect2.lockRotation = true;
+  // rect2.controls = {
+  //   ...fabric.Text.prototype.controls,
+  //   mtr: new fabric.Control({ visible: false }),
+  //   mb: new fabric.Control({ visible: false }),
+  //   mt: new fabric.Control({ visible: false }),
+  //   ml: new fabric.Control({ visible: false }),
+  //   mr: new fabric.Control({ visible: false }),
+  // };
+  // canvas.add(rect2);
 
-  canvas.setWidth(width);
-  canvas.setHeight(height);
-
-  if (haveICreatedATemplateDesigner) {
-    drawGrid(canvas, gridX, gridY, width, height, template);
+  changeRatio(newRatio: Ratio) {
+    this.ratio = newRatio;
+    this.dimensions = this.calculateDimensions(this.dimensions.size, this.dimensions.borders, this.template, this.ratio);
+    this.canvas.clear();
+    this.setCanvasSize();
+    this.drawRects();
   }
 
-  const rects = [];
-  for (let index in template.regions) {
-    let region = template.regions[index];
-    const number = preview ? undefined : (+index + 1).toString();
-    const rect = createRect(canvas, gridX, gridY, borders, region, number);
-    rects.push(rect);
+  changeTemplate(newTemplate: Template) {
+    this.template = newTemplate;
+    this.dimensions = this.calculateDimensions(this.dimensions.size, this.dimensions.borders, this.template, this.ratio);
+    this.canvas.clear();
+    this.drawRects();
   }
-}
 
-function createRect(canvas: fabric.Canvas, gridX: number, gridY: number, borders: number, region: Region, number: string | undefined) {
-  const rect = new fabric.Rect({
-    left: region.x * gridX - borders,
-    top: region.y * gridY - borders,
-    width: region.columns * gridX,
-    height: region.rows * gridY,
-    fill: backgroundColorEditing,
-    stroke: borderColor,
-    strokeWidth: borders,
-    selectable: false,
-  });
-  canvas.add(rect);
+  private setCanvasSize() {
+    this.canvas.setWidth(this.dimensions.width);
+    this.canvas.setHeight(this.dimensions.height);
+  }
 
-  if (number !== undefined) {
-    var fontSize = 80;
-    var fontOffset = 10;
-    var fill = '#666';
+  private drawRects() {
+    this.rects = [];
+    for (let index in this.template.regions) {
+      let region = this.template.regions[index];
+      const number = this.preview ? undefined : (+index + 1).toString();
+      const rect = this.createRect(region, number);
+      this.rects.push(rect);
+    }
+  }
 
-    var text = new fabric.Text(number, {
-      left: rect.left! + borders + fontOffset * 2,
-      top: rect.top! + borders + fontOffset,
-      fill: fill,
-      fontSize: fontSize,
+  private calculateDimensions(size: number, borders: number, template: Template, ratio: Ratio): Dimensions {
+    const isPortrait = ratio.height > ratio.width;
+    const isLandscape = ratio.height < ratio.width;
+    let width = size;
+    let height = size;
+    if (isPortrait) {
+      width = Math.floor((height / ratio.height) * ratio.width);
+    } else if (isLandscape) {
+      height = Math.floor((width / ratio.width) * ratio.height);
+    }
+
+    const gridX = (width + borders) / template.columns;
+    const gridY = (height + borders) / template.rows;
+    return {
+      size,
+      width,
+      height,
+      gridX,
+      gridY,
+      borders,
+    };
+  }
+
+  private createRect(region: Region, number: string | undefined) {
+    const rect = new fabric.Rect({
+      left: region.x * this.dimensions.gridX - this.dimensions.borders,
+      top: region.y * this.dimensions.gridY - this.dimensions.borders,
+      width: region.columns * this.dimensions.gridX,
+      height: region.rows * this.dimensions.gridY,
+      fill: this.backgroundColorEditing,
+      stroke: this.borderColor,
+      strokeWidth: this.dimensions.borders,
       selectable: false,
     });
-    canvas.add(text);
+    this.canvas.add(rect);
+
+    if (number !== undefined) {
+      var fontSize = 80;
+      var fontOffset = 10;
+      var fill = '#666';
+
+      var text = new fabric.Text(number, {
+        left: rect.left! + this.dimensions.borders + fontOffset * 2,
+        top: rect.top! + this.dimensions.borders + fontOffset,
+        fill: fill,
+        fontSize: fontSize,
+        selectable: false,
+      });
+      this.canvas.add(text);
+    }
+
+    return rect;
   }
 
-  return rect;
-}
-
-function drawGrid(canvas: fabric.Canvas, gridX: number, gridY: number, width: number, height: number, template: Template) {
-  // Vertical lines.
-  for (var i = 0; i < template.columns; i++) {
-    var stroke = '#ccc';
-    if (i > 0 && i % 5 === 0) {
-      stroke = '#666';
+  private drawGrid() {
+    // Vertical lines.
+    for (var i = 0; i < this.template.columns; i++) {
+      var stroke = '#ccc';
+      if (i > 0 && i % 5 === 0) {
+        stroke = '#666';
+      }
+      this.canvas.add(
+        new fabric.Line([i * this.dimensions.gridX, 0, i * this.dimensions.gridX, this.dimensions.height], {
+          stroke: stroke,
+          selectable: false,
+        })
+      );
     }
-    canvas.add(new fabric.Line([i * gridX, 0, i * gridX, height], { stroke: stroke, selectable: false }));
-  }
 
-  // Horizontal lines.
-  for (var i = 0; i < template.rows; i++) {
-    var stroke = '#ccc';
-    if (i > 0 && i % 5 === 0) {
-      stroke = '#666';
+    // Horizontal lines.
+    for (var i = 0; i < this.template.rows; i++) {
+      var stroke = '#ccc';
+      if (i > 0 && i % 5 === 0) {
+        stroke = '#666';
+      }
+      this.canvas.add(
+        new fabric.Line([0, i * this.dimensions.gridY, this.dimensions.width, i * this.dimensions.gridY], {
+          stroke: stroke,
+          selectable: false,
+        })
+      );
     }
-    canvas.add(new fabric.Line([0, i * gridY, width, i * gridY], { stroke: stroke, selectable: false }));
   }
 }

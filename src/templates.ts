@@ -752,6 +752,6 @@ export const templatesByCount: { [key: number]: Template[] } = templates.reduce(
   return r;
 }, Object.create(null));
 
-export function getTemplateById(id: number): Template | undefined {
-  return templates.find((x) => x.id === id);
-}
+// export function getTemplateById(id: number): Template | undefined {
+//   return templates.find((x) => x.id === id);
+// }

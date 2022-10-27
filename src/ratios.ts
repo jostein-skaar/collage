@@ -3,7 +3,6 @@ export const ratios: Ratio[] = [
   { name: 'square', width: 1, height: 1 },
   { name: 'half', width: 2, height: 1 },
   { name: 'widescreen', width: 16, height: 9 },
-  { name: 'book', width: 3, height: 4 },
   { name: 'standing', width: 1, height: 2 },
   { name: 'portrait', width: 2, height: 3 },
 ];

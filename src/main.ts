@@ -1,7 +1,10 @@
 import './style.css';
-import { getRatioByName, ratios } from './ratios';
-import { templatesByCount, getTemplateById } from './templates';
-import { initCollageDesigner } from './collage-designer';
+import { getRatioByName, Ratio, ratios } from './ratios';
+import { templatesByCount, Template } from './templates';
+import { CollageDesigner } from './collage-designer';
+
+let currentRatio: Ratio = ratios[0];
+let currentTemplate: Template = templatesByCount[2][0];
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 <div class="content">
@@ -26,7 +29,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 </div>
 `;
 
-initCollageDesigner('collage-designer-canvas', 800, 5, templatesByCount[4][3], ratios[0]);
+const collageDesigner = new CollageDesigner('collage-designer-canvas', 800, 5, currentTemplate, currentRatio);
 
 const ratioSelect = document.querySelector<HTMLSelectElement>('#ratio')!;
 for (const ratio of ratios) {
@@ -34,7 +37,8 @@ for (const ratio of ratios) {
 }
 
 ratioSelect.addEventListener('change', () => {
-  console.log(getRatioByName(ratioSelect.value));
+  currentRatio = getRatioByName(ratioSelect.value) ?? currentRatio;
+  collageDesigner.changeRatio(currentRatio);
 });
 
 previewTemplates(document.querySelector<HTMLDivElement>('#templates')!);
@@ -58,7 +62,11 @@ function previewTemplates(templatesDiv: HTMLDivElement) {
       const canvasId = `template_${template.id}`;
       elementDiv.innerHTML = `<canvas id="${canvasId}"></canvas>`;
       groupElementsDiv.appendChild(elementDiv);
-      initCollageDesigner(canvasId, 50, 1, template, ratios[0], true);
+      new CollageDesigner(canvasId, 50, 1, template, currentRatio, true);
+      elementDiv.addEventListener('click', () => {
+        currentTemplate = template;
+        collageDesigner.changeTemplate(currentTemplate);
+      });
     }
   }
 }
